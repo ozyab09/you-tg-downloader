@@ -8,8 +8,8 @@ import os
 import tempfile
 import threading
 import uuid
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
-from typing import AsyncIterator, Callable
 
 from app.config.settings import Settings
 from app.downloader.errors import DownloadError, TooLargeError
@@ -330,4 +330,4 @@ def _cleanup_stem(tmp_dir: str, stem: str) -> None:
         logger.warning("Не удалось прочитать каталог %s: %s", tmp_dir, exc)
 
 
-__all__ = ["DeliveryPipeline", "DeliveryResult", "CancelRegistry", "file_stream"]
+__all__ = ["CancelRegistry", "DeliveryPipeline", "DeliveryResult", "file_stream"]

@@ -19,15 +19,15 @@ from app.downloader.formats import (
 
 __all__ = [
     "AccessDeniedError",
+    "AudioOption",
     "DownloadError",
+    "FormatChoice",
     "FormatNotFoundError",
     "LiveStreamError",
     "TooLargeError",
     "UnavailableError",
     "UpstreamTimeoutError",
-    "map_ytdlp_error",
-    "AudioOption",
-    "FormatChoice",
     "VideoOption",
     "build_format_menu",
+    "map_ytdlp_error",
 ]

@@ -28,13 +28,13 @@ DURATION_LIMIT = (
 )
 
 __all__ = [
-    "NOT_A_YOUTUBE_URL",
-    "FETCHING_INFO",
-    "DOWNLOADING",
-    "UPLOADING",
     "CANCELLED",
-    "MENU_CLOSED",
-    "TOO_LARGE",
-    "SEND_FAILED",
+    "DOWNLOADING",
     "DURATION_LIMIT",
+    "FETCHING_INFO",
+    "MENU_CLOSED",
+    "NOT_A_YOUTUBE_URL",
+    "SEND_FAILED",
+    "TOO_LARGE",
+    "UPLOADING",
 ]

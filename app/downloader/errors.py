@@ -71,12 +71,12 @@ def map_ytdlp_error(message: str) -> DownloadError:
 
 
 __all__ = [
-    "DownloadError",
-    "UnavailableError",
     "AccessDeniedError",
+    "DownloadError",
+    "FormatNotFoundError",
     "LiveStreamError",
     "TooLargeError",
-    "FormatNotFoundError",
+    "UnavailableError",
     "UpstreamTimeoutError",
     "map_ytdlp_error",
 ]

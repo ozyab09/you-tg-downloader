@@ -143,10 +143,10 @@ def pick_quality_height(height: int | None, available: list[int]) -> int | None:
 
 
 __all__ = [
+    "YOUTUBE_HEIGHTS",
     "AudioOption",
     "FormatChoice",
     "VideoOption",
-    "YOUTUBE_HEIGHTS",
     "build_format_menu",
     "label_for_height",
     "pick_quality_height",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def format_duration(seconds: int | float | None) -> str:
+def format_duration(seconds: float | None) -> str:
     """Секунды -> '1:02:03' / '5:04'. None или <=0 -> '—'."""
     if seconds is None:
         return "—"
@@ -20,7 +20,7 @@ def format_duration(seconds: int | float | None) -> str:
     return f"{minutes}:{secs:02d}"
 
 
-def human_size(num_bytes: int | float | None) -> str:
+def human_size(num_bytes: float | None) -> str:
     """Байты -> человекочитаемый размер ('12.3 МБ')."""
     if not num_bytes or num_bytes <= 0:
         return "—"

@@ -186,8 +186,8 @@ def estimate_percent(
 
 __all__ = [
     "PHASE_TITLES",
-    "ProgressAnimator",
     "SPINNER_FRAMES",
+    "ProgressAnimator",
     "estimate_percent",
     "percent_bar",
 ]

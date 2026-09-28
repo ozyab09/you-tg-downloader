@@ -92,4 +92,4 @@ def load_settings() -> Settings:
     )
 
 
-__all__ = ["Settings", "load_settings", "PurePath"]
+__all__ = ["PurePath", "Settings", "load_settings"]

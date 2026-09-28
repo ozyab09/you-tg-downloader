@@ -28,4 +28,4 @@ def setup_logging(level: str = "INFO") -> None:
     logging.getLogger("yt_dlp").setLevel(logging.WARNING)
 
 
-__all__ = ["setup_logging", "LOG_FORMAT"]
+__all__ = ["LOG_FORMAT", "setup_logging"]
