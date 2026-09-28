@@ -73,10 +73,10 @@ def load_settings() -> Settings:
             "Скопируйте .env.example в .env и заполните её."
         )
 
-    # Основное имя — ALLOWED_USER_IDS; поддерживаем также TELEGRAM_USER_ALLOW_IDS
-    # (на случай уже существующих .env с другим именем переменной).
-    allowed_raw = os.environ.get("ALLOWED_USER_IDS", "") or os.environ.get(
-        "TELEGRAM_USER_ALLOW_IDS", ""
+    # Основное имя — TELEGRAM_USER_ALLOW_IDS; поддерживается алиас ALLOWED_USER_IDS
+    # (приоритет у основного имени).
+    allowed_raw = os.environ.get("TELEGRAM_USER_ALLOW_IDS", "") or os.environ.get(
+        "ALLOWED_USER_IDS", ""
     )
     allowed = _parse_allowed_ids(allowed_raw)
 

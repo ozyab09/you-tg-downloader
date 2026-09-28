@@ -28,7 +28,7 @@ async def run() -> None:
     if settings.is_public:
         logger.warning(
             "Белый список пуст — бот будет отвечать всем пользователям. "
-            "Задайте ALLOWED_USER_IDS (или TELEGRAM_USER_ALLOW_IDS) в .env"
+            "Задайте TELEGRAM_USER_ALLOW_IDS (или ALLOWED_USER_IDS) в .env"
         )
     else:
         logger.info("Белый список: %d user_id", len(settings.allowed_user_ids))

@@ -86,7 +86,7 @@ ruff check app tests
 | Переменная | Обязательна | По умолчанию | Описание |
 |---|:---:|---|---|
 | `TELEGRAM_BOT_TOKEN` | ✅ | — | Токен бота от @BotFather |
-| `ALLOWED_USER_IDS` | ⚠️ | пусто | Белый список user_id через запятую. Пусто = отвечать всем (не рекомендуется) |
+| `TELEGRAM_USER_ALLOW_IDS` | ⚠️ | пусто | Белый список user_id через запятую. Пусто = отвечать всем (не рекомендуется). Алиас: `ALLOWED_USER_IDS` |
 | `MAX_FILE_SIZE_MB` | — | `50` | Максимальный размер отправляемого файла, МБ |
 | `MAX_VIDEO_DURATION_MIN` | — | `30` | Максимальная длительность видео, минут |
 | `LOG_LEVEL` | — | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
@@ -94,7 +94,8 @@ ruff check app tests
 | `METADATA_CACHE_TTL_SEC` | — | `300` | TTL кэша метаданных, секунд |
 | `MAX_PROGRESS_EDITS` | — | `30` | Бюджет редактирований сообщения прогресса на одну загрузку |
 
-> Для обратной совместимости принимается также `TELEGRAM_USER_ALLOW_IDS`.
+> Поддерживаются оба имени переменной белого списка: `TELEGRAM_USER_ALLOW_IDS`
+> (основное) и `ALLOWED_USER_IDS` (алиас).
 
 ## 📏 Лимиты Telegram Bot API
 
