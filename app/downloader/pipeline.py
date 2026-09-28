@@ -274,7 +274,7 @@ class DeliveryPipeline:
             try:
                 await asyncio.wait_for(
                     upload_stream_to_telegram(
-                        base_url=self._settings.api_base_url,
+                        base_url="https://api.telegram.org",
                         token=self._settings.bot_token,
                         chat_id=chat_id,
                         kind="video",
@@ -369,7 +369,7 @@ class DeliveryPipeline:
             try:
                 await asyncio.wait_for(
                     upload_stream_to_telegram(
-                        base_url=self._settings.api_base_url,
+                        base_url="https://api.telegram.org",
                         token=self._settings.bot_token,
                         chat_id=chat_id,
                         kind=kind,
