@@ -29,6 +29,11 @@ logger = logging.getLogger(__name__)
 # URL/метаданные последнего запроса на каждый chat (для callback'ов).
 _last_payload: dict[int, dict[str, Any]] = {}
 
+# Гонка метаданных: не даём одному chat параллельно слать много ссылок.
+# Без этого busy проверяется только при старте загрузки, а extract_info
+# (до 30 с) можно было заспамить параллельными запросами.
+fetching_info: set[int] = set()
+
 
 def _caption(info: dict) -> str:
     title = info.get("title") or "Без названия"
@@ -69,12 +74,20 @@ def setup_router(settings: Settings, pipeline: DeliveryPipeline) -> Router:
             await message.answer(texts.NOT_A_YOUTUBE_URL)
             return
 
-        if chat_id in busy:
-            await message.answer("⏳ Дождитесь завершения текущей загрузки.")
+        if chat_id in busy or chat_id in fetching_info:
+            await message.answer("⏳ Дождитесь завершения текущей операции.")
             return
 
         note = await message.answer(texts.FETCHING_INFO)
+        fetching_info.add(chat_id)
 
+        try:
+            await _handle_url(message, note, text)
+        finally:
+            fetching_info.discard(chat_id)
+
+    async def _handle_url(message: Message, note: Message, text: str) -> None:
+        chat_id = message.chat.id
         try:
             normalized = normalize_youtube_url(text)
         except InvalidUrlError as exc:
@@ -163,9 +176,9 @@ def setup_router(settings: Settings, pipeline: DeliveryPipeline) -> Router:
 
         if cb_type == keyboards.CB_CANCEL:
             cancelled = await pipeline.cancel_registry.cancel(chat_id)
+            # busy не трогаем: его корректно снимет finally самой задачи;
+            # снятие здесь гонит финальные сообщений об отмене из задачи.
             in_progress = chat_id in busy
-            if in_progress:
-                busy.discard(chat_id)
             await callback.answer()
             with contextlib.suppress(TelegramAPIError):
                 await callback.message.edit_text(

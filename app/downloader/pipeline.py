@@ -16,6 +16,7 @@ from app.downloader.errors import DownloadError, TooLargeError
 from app.downloader.formats import FormatChoice
 from app.downloader.streaming import StreamSession
 from app.downloader.telegram_upload import upload_stream_to_telegram
+from app.downloader.tmp_cleanup import cleanup_stale_tmp_files
 from app.downloader.ytdlp import YtDlpClient
 from app.utils.formatting import human_size
 
@@ -92,6 +93,10 @@ class DeliveryPipeline:
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_downloads)
         self._registry = CancelRegistry()
         self._tmp_dir = "/dev/shm" if os.path.isdir("/dev/shm") else tempfile.gettempdir()
+
+    def startup_cleanup(self) -> None:
+        """Удаляет tmpfs-хлам после крашей предыдущих запусков. Вызывать на старте."""
+        cleanup_stale_tmp_files(self._tmp_dir)
 
     @property
     def cancel_registry(self) -> CancelRegistry:

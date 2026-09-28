@@ -50,6 +50,7 @@ async def run() -> None:
     dp = Dispatcher(name="root")
 
     pipeline = DeliveryPipeline(settings)
+    pipeline.startup_cleanup()
 
     # Белый список: на все апдейты (сообщения и callback-запросы).
     dp.update.middleware(WhitelistMiddleware(settings.allowed_user_ids))
