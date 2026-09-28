@@ -36,6 +36,16 @@ class DeliveryResult:
     bytes_sent: int = 0
 
 
+@dataclass
+class VideoMeta:
+    """Метаданные видео для прогресса и корректных sendVideo-полей."""
+
+    expected_size: int | None = None
+    duration: int | None = None
+    width: int | None = None
+    height: int | None = None
+
+
 class CancelRegistry:
     """Реестр активных задач для кнопки «Отмена»."""
 
@@ -110,51 +120,59 @@ class DeliveryPipeline:
     def _audio_selector(self, choice: FormatChoice) -> str:
         return "bestaudio"
 
-    async def _estimate_size(self, url: str, choice: FormatChoice) -> int | None:
-        """Оценка итогового размера (видео + аудио + запас на AAC) по метаданным."""
+    async def _video_meta(self, url: str, choice: FormatChoice) -> VideoMeta:
+        """Метаданные видео: оценка размера, длительность, размеры кадра.
+
+        Всё не критично для работы — при ошибке возвращаем пустую мету.
+        """
         try:
             info = await self._ytdlp.extract_info(url)
         except Exception:  # noqa: BLE001 — оценка не критична для работы
-            return None
+            return VideoMeta()
         fmts = info.get("formats") or []
         duration = info.get("duration")
 
         video_kbps = 0.0
+        video_width: int | None = None
+        video_height: int | None = None
+
         if choice.kind == "video" and choice.height:
-            heights = [
+            candidates = [
                 f for f in fmts
                 if (f.get("vcodec") or "none") != "none"
-                and isinstance(f.get("height"), int)
-                and f["height"] <= choice.height
+                and f.get("height") == choice.height
                 and isinstance(f.get("tbr"), (int, float))
                 and (f.get("protocol") or "") not in ("m3u8", "m3u8_native")
             ]
-            if heights:
-                video_kbps = max(f["tbr"] for f in heights)
+            if candidates:
+                best_fmt = max(candidates, key=lambda f: f["tbr"])
+                video_kbps = best_fmt["tbr"]
+                video_width = best_fmt.get("width") if isinstance(best_fmt.get("width"), int) else None
+                video_height = choice.height
         elif choice.kind == "best" and fmts:
             vbrs = [
-                f["tbr"] for f in fmts
+                f for f in fmts
                 if (f.get("vcodec") or "none") != "none"
                 and isinstance(f.get("tbr"), (int, float))
             ]
-            video_kbps = max(vbrs, default=0.0)
+            if vbrs:
+                best_fmt = max(vbrs, key=lambda f: f["tbr"])
+                video_kbps = best_fmt["tbr"]
+                video_width = best_fmt.get("width") if isinstance(best_fmt.get("width"), int) else None
+                video_height = best_fmt.get("height") if isinstance(best_fmt.get("height"), int) else None
 
-        abrs = [
-            f["tbr"] for f in fmts
-            if (f.get("vcodec") or "none") == "none"
-            and (f.get("acodec") or "none") != "none"
-            and isinstance(f.get("tbr"), (int, float))
-        ]
-        audio_kbps = max(abrs, default=128.0)
+        expected: int | None = None
+        if duration and video_kbps > 0:
+            # tbr — только видео-поток; аудио перекодируется в AAC 160k.
+            expected = max(1, int((video_kbps + 160) * 1000 / 8 * duration))
 
-        if not duration or (video_kbps <= 0 and choice.kind == "video"):
-            return None
-        # tbr уже включает аудио у прогрессивных, но у DASH это только поток.
-        total_kbps = video_kbps + 160  # аудио перекодируется в AAC 160k
-        if choice.kind == "audio" or audio_kbps > 0 and video_kbps == 0:
-            total_kbps = audio_kbps
-        bytes_ = int(total_kbps * 1000 / 8 * duration)
-        return max(1, bytes_)
+        duration_int = int(duration) if isinstance(duration, (int, float)) and duration > 0 else None
+        return VideoMeta(
+            expected_size=expected,
+            duration=duration_int,
+            width=video_width,
+            height=video_height,
+        )
 
     async def deliver(
         self,
@@ -219,8 +237,9 @@ class DeliveryPipeline:
     ) -> DeliveryResult:
         max_bytes = self._settings.max_file_size_bytes
 
-        # Оценка ожидаемого размера для прогресс-бара (из метаданных форматов).
-        expected = await self._estimate_size(url, choice)
+        # Метаданные: оценка размера для прогресса и размеры кадра для sendVideo.
+        meta = await self._video_meta(url, choice)
+        expected = meta.expected_size
 
         # Если оценка превышает лимит — сообщаем сразу, не тратя трафик.
         if expected is not None and expected > max_bytes:
@@ -261,7 +280,9 @@ class DeliveryPipeline:
                         kind="video",
                         stream=body(),
                         caption=caption,
-                        duration=duration,
+                        duration=duration or meta.duration,
+                        width=meta.width,
+                        height=meta.height,
                     ),
                     timeout=JOB_TIMEOUT_SEC,
                 )
