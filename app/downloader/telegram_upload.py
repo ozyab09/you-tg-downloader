@@ -48,6 +48,8 @@ async def upload_stream_to_telegram(
     duration: int | None = None,
     title: str | None = None,
     performer: str | None = None,
+    width: int | None = None,
+    height: int | None = None,
 ) -> None:
     """Отправляет поток в Telegram как video/audio.
 
@@ -68,6 +70,14 @@ async def upload_stream_to_telegram(
         fields["caption"] = caption
     if duration:
         fields["duration"] = str(int(duration))
+    if kind == "video":
+        # Без width/height Telegram не показывает превью и стриминг,
+        # supports_streaming включает прямое воспроизведение в клиентах.
+        fields["supports_streaming"] = "true"
+        if width:
+            fields["width"] = str(int(width))
+        if height:
+            fields["height"] = str(int(height))
     if kind == "audio":
         if performer:
             fields["performer"] = performer
