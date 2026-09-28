@@ -7,6 +7,11 @@ services:
     stop_grace_period: 30s
     tmpfs:
       - /dev/shm:size=512m
+    # Код приложения монтируется с хоста (read-only): правки применяются
+    # без пересборки образа — watchfiles перезапускает процесс сам.
+    volumes:
+      - ./app:/app/app:ro
+    command: ["watchfiles", "python -m app.main", "/app/app"]
     logging:
       driver: json-file
       options:

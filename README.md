@@ -8,12 +8,18 @@
 работает через Docker в одну команду.
 
 [![CI](https://github.com/ozyab09/you-tg-downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/ozyab09/you-tg-downloader/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![aiogram](https://img.shields.io/badge/aiogram-3.x-2CA5E0?logo=telegram&logoColor=white)](https://docs.aiogram.dev/)
 [![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-red)](https://github.com/yt-dlp/yt-dlp)
 [![Docker](https://img.shields.io/badge/Docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![Tests](https://img.shields.io/badge/tests-46%20passed-brightgreen)](#тесты)
+[![Tests](https://img.shields.io/badge/tests-46%20passed-brightgreen)](#-тесты)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+[Возможности](#-возможности) ·
+[Быстрый старт](#-быстрый-старт) ·
+[Конфигурация](#️-переменные-окружения) ·
+[Архитектура](#-архитектура) ·
+[Разработка](#-разработка)
 
 </div>
 
@@ -32,6 +38,7 @@
 | 🔐 **Белый список** | Доступ только для разрешённых `user_id` (чужие — молча игнорируются + лог `WARNING`) |
 | 💾 **Кэш метаданных** | TTL 5 минут — повторные запросы мгновенны |
 | 🚦 **Лимиты** | Макс. размер файла и длительность видео через ENV, семафор параллельности |
+| 🔁 **Dev-режим** | Код через volume + watchfiles: правки применяются без пересборки образа |
 
 ### Как это выглядит
 
@@ -49,11 +56,11 @@
 ## 🚀 Быстрый старт
 
 ```bash
-git clone https://github.com/<owner>/you-tg-downloader.git
+git clone https://github.com/ozyab09/you-tg-downloader.git
 cd you-tg-downloader
 
 cp .env.example .env
-# заполните TELEGRAM_BOT_TOKEN и ALLOWED_USER_IDS
+# заполните TELEGRAM_BOT_TOKEN и TELEGRAM_USER_ALLOW_IDS
 
 docker compose up -d --build
 docker compose logs -f bot
@@ -94,9 +101,6 @@ ruff check app tests
 | `MAX_CONCURRENT_DOWNLOADS` | — | `2` | Сколько загрузок может идти одновременно |
 | `METADATA_CACHE_TTL_SEC` | — | `300` | TTL кэша метаданных, секунд |
 | `MAX_PROGRESS_EDITS` | — | `30` | Бюджет редактирований сообщения прогресса на одну загрузку |
-
-> Поддерживаются оба имени переменной белого списка: `TELEGRAM_USER_ALLOW_IDS`
-> (основное) и `ALLOWED_USER_IDS` (алиас).
 
 ## 📏 Лимиты Telegram Bot API
 
@@ -140,6 +144,24 @@ yt-dlp -o - ──▶ ffmpeg (mp4 frag) ──▶ httpx multipart ──▶ Tele
 
 Аудио и fallback: yt-dlp рендерит файл в `/dev/shm` (tmpfs, только память ОС),
 файл стримится в Bot API и **гарантированно удаляется в `finally`**.
+
+## 🛠️ Разработка
+
+Код монтируется в контейнер через volume (`./app:/app/app:ro`), процесс
+запускается под [watchfiles](https://github.com/samuelcolvin/watchfiles):
+правки в `app/` **автоматически перезапускают бота** — пересборка образа
+не нужна:
+
+```bash
+docker compose up -d --build   # единственная сборка
+# ... правьте файлы в app/ — бот перезапустится сам ...
+docker compose logs -f bot     # смотрите перезапуски в логах
+```
+
+Пересборка нужна только при изменении `requirements.txt` или `Dockerfile`.
+
+Правила вклада и PR-workflow — в [CONTRIBUTING.md](CONTRIBUTING.md),
+правила для ИИ-агентов — в [AGENT.md](AGENT.md).
 
 ## 🔒 Безопасность
 

@@ -1,0 +1,24 @@
+name: Auto-merge Dependabot PRs
+
+# Включает авто-мерж (squash) для PR от dependabot[bot]:
+# PR встанет в очередь и смёржится сам, как только CI станет зелёным.
+# Требует: repo setting allow_auto_merge=true + required status checks в protection.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
