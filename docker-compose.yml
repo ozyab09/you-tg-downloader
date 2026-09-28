@@ -1,0 +1,14 @@
+services:
+  bot:
+    build: .
+    container_name: ytbot
+    env_file: .env
+    restart: unless-stopped
+    stop_grace_period: 30s
+    tmpfs:
+      - /dev/shm:size=512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

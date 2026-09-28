@@ -1,0 +1,39 @@
+# ==== Секреты ====
+.env
+
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ==== Тесты и линтеры ====
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ==== IDE ====
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ==== ОС ====
+.DS_Store
+Thumbs.db
+
+# ==== Временные файлы скачивания ====
+*.part
+*.ytdl
+*.mp4
+*.mp3
+*.mkv
+*.m4a
