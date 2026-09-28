@@ -21,6 +21,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+# Код копируется в образ, чтобы он был самодостаточным (можно запустить
+# без volume, например на сервере без репозитория). В docker-compose этот
+# слой перекрывается монтированием ./app:/app/app:ro для dev-перезагрузки.
 COPY app ./app
 
 # Непривилегированный пользователь.
