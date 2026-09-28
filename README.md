@@ -107,10 +107,33 @@ ruff check app tests
 | Режим | Лимит на файл |
 |---|---|
 | Обычный Bot API (по умолчанию) | **50 МБ** |
-| [Локальный Bot API Server](https://github.com/tdlib/telegram-bot-api) | **2 ГБ** |
+| Локальный Bot API Server (включён в compose) | **2 ГБ** |
 
 Бот проверяет размер заранее (по метаданным) и по ходу загрузки; при превышении
 предлагает выбрать качество ниже или аудио.
+
+### Локальный Bot API Server (2 ГБ)
+
+В `docker-compose.yml` уже есть сервис `telegram-bot-api` (образ
+[aiogram/telegram-bot-api](https://hub.docker.com/r/aiogram/telegram-bot-api)).
+Чтобы включить:
+
+1. Получите `api_id` и `api_hash` на
+   [my.telegram.org](https://my.telegram.org) → *API development tools*
+2. Добавьте в `.env`:
+
+   ```env
+   TELEGRAM_API_ID=12345
+   TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef
+   TELEGRAM_API_BASE_URL=http://telegram-bot-api:8081
+   ```
+
+3. `docker compose up -d` — бот пойдёт через локальный сервер, лимит станет 2 ГБ
+   (`MAX_FILE_SIZE_MB` по умолчанию поднимется до 2000, можно переопределить).
+
+> ⚠️ Локальный сервер хранит отправляемые файлы в volume
+> `telegram-bot-api-data` — учитывайте место на диске.
+> Без `TELEGRAM_API_BASE_URL` бот работает через облачный api.telegram.org.
 
 ## 🏗️ Архитектура
 

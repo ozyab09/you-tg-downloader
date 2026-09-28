@@ -9,6 +9,7 @@ import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 
 from app.bot.handlers import setup_router
@@ -24,7 +25,12 @@ async def run() -> None:
     settings = load_settings()
     setup_logging(settings.log_level)
 
-    logger.info("Старт бота; лимиты: %d МБ / %d мин", settings.max_file_size_mb, settings.max_video_duration_min)
+    logger.info(
+        "Старт бота; лимиты: %d МБ / %d мин; Bot API: %s",
+        settings.max_file_size_mb,
+        settings.max_video_duration_min,
+        settings.api_base_url,
+    )
     if settings.is_public:
         logger.warning(
             "Белый список пуст — бот будет отвечать всем пользователям. "
@@ -35,6 +41,7 @@ async def run() -> None:
 
     bot = Bot(
         token=settings.bot_token,
+        session=AiohttpSession(api=settings.api_base_url),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(name="root")

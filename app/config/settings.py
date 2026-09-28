@@ -39,6 +39,9 @@ class Settings:
     bot_token: str
     allowed_user_ids: frozenset[int] = field(default_factory=frozenset)
 
+    # Базовый URL Bot API: обычный облачный или локальный сервер (2 ГБ).
+    api_base_url: str = "https://api.telegram.org"
+
     max_file_size_mb: int = 50          # лимит Telegram Bot API
     max_video_duration_min: int = 30
     log_level: str = "INFO"
@@ -80,10 +83,17 @@ def load_settings() -> Settings:
     )
     allowed = _parse_allowed_ids(allowed_raw)
 
+    # Локальный Bot API Server: включается явно через TELEGRAM_API_BASE_URL
+    # (в docker-compose это http://telegram-bot-api:8081). Лимит файла там 2 ГБ,
+    # поэтому дефолт MAX_FILE_SIZE_MB повышаем, если пользователь не задал свой.
+    api_base_url = os.environ.get("TELEGRAM_API_BASE_URL", "").strip().rstrip("/")
+    default_max_mb = 2000 if api_base_url else 50
+
     return Settings(
         bot_token=token,
         allowed_user_ids=allowed,
-        max_file_size_mb=_env_int("MAX_FILE_SIZE_MB", 50, minimum=1),
+        api_base_url=api_base_url or "https://api.telegram.org",
+        max_file_size_mb=_env_int("MAX_FILE_SIZE_MB", default_max_mb, minimum=1),
         max_video_duration_min=_env_int("MAX_VIDEO_DURATION_MIN", 30, minimum=1),
         log_level=os.environ.get("LOG_LEVEL", "INFO").strip().upper() or "INFO",
         max_concurrent_downloads=_env_int("MAX_CONCURRENT_DOWNLOADS", 2, minimum=1),
