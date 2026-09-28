@@ -7,11 +7,11 @@ services:
     stop_grace_period: 30s
     tmpfs:
       - /dev/shm:size=1g
-    # Код приложения монтируется с хоста (read-only): правки применяются
-    # без пересборки образа — watchfiles перезапускает процесс сам.
+    # Код монтируется с хоста: правки применяются через `docker compose restart bot`
+    # (без пересборки образа). Watchfiles не используем: автоперезапуск посреди
+    # загрузки роняет активные задачи.
     volumes:
       - ./app:/app/app:ro
-    command: ["watchfiles", "python -m app.main", "/app/app"]
     logging:
       driver: json-file
       options:
