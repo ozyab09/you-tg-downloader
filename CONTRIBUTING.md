@@ -3,7 +3,7 @@
 ## Правила
 
 - **Прямые пуши в `main` запрещены.** Все изменения — через Pull Request.
-- PR требует зелёного CI: `ruff check` + `pytest` (Python 3.11 и 3.12) + сборка Docker-образа.
+- PR требует зелёного CI: `ruff check` + `pytest` (Python 3.12) + сборка Docker-образа.
 - Минимум один approve на ревью.
 
 ## Workflow

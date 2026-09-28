@@ -7,6 +7,7 @@
 Скачивает видео до 4K и MP3, показывает живой анимированный прогресс,
 работает через Docker в одну команду.
 
+[![CI](https://github.com/ozyab09/you-tg-downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/ozyab09/you-tg-downloader/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![aiogram](https://img.shields.io/badge/aiogram-3.x-2CA5E0?logo=telegram&logoColor=white)](https://docs.aiogram.dev/)
 [![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-red)](https://github.com/yt-dlp/yt-dlp)
