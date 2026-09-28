@@ -10,6 +10,7 @@ import os
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.telegram import TelegramAPIServer
 from aiogram.enums import ParseMode
 
 from app.bot.handlers import setup_router
@@ -39,9 +40,12 @@ async def run() -> None:
     else:
         logger.info("Белый список: %d user_id", len(settings.allowed_user_ids))
 
+    # Локальный Bot API Server: TelegramAPIServer.from_base(base, is_local=True).
+    is_local = settings.api_base_url.startswith("http://telegram-bot-api") or "8081" in settings.api_base_url
+    api_server = TelegramAPIServer.from_base(settings.api_base_url, is_local=is_local)
     bot = Bot(
         token=settings.bot_token,
-        session=AiohttpSession(api=settings.api_base_url),
+        session=AiohttpSession(api=api_server),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(name="root")
