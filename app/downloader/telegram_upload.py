@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import httpx
 
@@ -26,14 +26,14 @@ def _build_preamble(fields: dict[str, str], file_field: str, filename: str, mime
                 f"--{_BOUNDARY}\r\n"
                 f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
                 f"{value}\r\n"
-            ).encode("utf-8")
+            ).encode()
         )
     parts.append(
         (
             f"--{_BOUNDARY}\r\n"
             f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'
             f"Content-Type: {mime}\r\n\r\n"
-        ).encode("utf-8")
+        ).encode()
     )
     return b"".join(parts)
 
@@ -75,7 +75,7 @@ async def upload_stream_to_telegram(
             fields["title"] = title
 
     preamble = _build_preamble(fields, file_field, filename, mime)
-    epilogue = f"\r\n--{_BOUNDARY}--\r\n".encode("utf-8")
+    epilogue = f"\r\n--{_BOUNDARY}--\r\n".encode()
 
     async def body_iter() -> AsyncIterator[bytes]:
         yield preamble

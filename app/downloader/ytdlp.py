@@ -6,7 +6,8 @@ import asyncio
 import logging
 import os
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import yt_dlp
 
@@ -189,4 +190,4 @@ class YtDlpClient:
             raise DownloadError("Загрузка отменена") from None
 
 
-__all__ = ["YtDlpClient", "ProgressCallback"]
+__all__ = ["ProgressCallback", "YtDlpClient"]

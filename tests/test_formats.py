@@ -88,7 +88,7 @@ class TestCallbackData:
             kind="audio", format_id=None, label="MP3 320", audio_bitrate_kbps=320
         )
         data = keyboards.cb_data_download(choice)
-        cb_type, payload = keyboards.parse_callback(data)
+        _cb_type, payload = keyboards.parse_callback(data)
         restored = keyboards.choice_from_payload(payload)
         assert restored is not None
         assert restored.kind == "audio"

@@ -108,7 +108,7 @@ class StreamSession:
             if text:
                 self._stderr_tail.append(text)
 
-    def __aiter__(self) -> "StreamSession":
+    def __aiter__(self) -> StreamSession:
         return self
 
     async def __anext__(self) -> bytes:

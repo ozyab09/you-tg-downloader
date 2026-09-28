@@ -28,7 +28,7 @@ class InvalidUrlError(ValueError):
 class NormalizedUrl:
     """Результат нормализации: id видео и/или id плейлиста."""
 
-    __slots__ = ("video_id", "playlist_id", "url")
+    __slots__ = ("playlist_id", "url", "video_id")
 
     def __init__(self, video_id: str | None, playlist_id: str | None, url: str) -> None:
         self.video_id = video_id
