@@ -102,6 +102,60 @@ class DeliveryPipeline:
             return "bestvideo*+bestaudio/best"
         return "bestaudio/best"
 
+    def _video_selector(self, choice: FormatChoice) -> str:
+        if choice.kind == "best":
+            return "bestvideo*"
+        return choice.format_id or "bestvideo*"
+
+    def _audio_selector(self, choice: FormatChoice) -> str:
+        return "bestaudio"
+
+    async def _estimate_size(self, url: str, choice: FormatChoice) -> int | None:
+        """Оценка итогового размера (видео + аудио + запас на AAC) по метаданным."""
+        try:
+            info = await self._ytdlp.extract_info(url)
+        except Exception:  # noqa: BLE001 — оценка не критична для работы
+            return None
+        fmts = info.get("formats") or []
+        duration = info.get("duration")
+
+        video_kbps = 0.0
+        if choice.kind == "video" and choice.height:
+            heights = [
+                f for f in fmts
+                if (f.get("vcodec") or "none") != "none"
+                and isinstance(f.get("height"), int)
+                and f["height"] <= choice.height
+                and isinstance(f.get("tbr"), (int, float))
+                and (f.get("protocol") or "") not in ("m3u8", "m3u8_native")
+            ]
+            if heights:
+                video_kbps = max(f["tbr"] for f in heights)
+        elif choice.kind == "best" and fmts:
+            vbrs = [
+                f["tbr"] for f in fmts
+                if (f.get("vcodec") or "none") != "none"
+                and isinstance(f.get("tbr"), (int, float))
+            ]
+            video_kbps = max(vbrs, default=0.0)
+
+        abrs = [
+            f["tbr"] for f in fmts
+            if (f.get("vcodec") or "none") == "none"
+            and (f.get("acodec") or "none") != "none"
+            and isinstance(f.get("tbr"), (int, float))
+        ]
+        audio_kbps = max(abrs, default=128.0)
+
+        if not duration or (video_kbps <= 0 and choice.kind == "video"):
+            return None
+        # tbr уже включает аудио у прогрессивных, но у DASH это только поток.
+        total_kbps = video_kbps + 160  # аудио перекодируется в AAC 160k
+        if choice.kind == "audio" or audio_kbps > 0 and video_kbps == 0:
+            total_kbps = audio_kbps
+        bytes_ = int(total_kbps * 1000 / 8 * duration)
+        return max(1, bytes_)
+
     async def deliver(
         self,
         url: str,
@@ -133,6 +187,7 @@ class DeliveryPipeline:
                         on_progress, on_phase, cancel_event,
                     )
                 except TooLargeError:
+                    # Больше не имеет смысла на tmpfs — там тот же лимит. Сообщаем сразу.
                     raise
                 except DownloadError as exc:
                     if cancel_event.is_set():
@@ -163,21 +218,34 @@ class DeliveryPipeline:
         cancel_event: asyncio.Event,
     ) -> DeliveryResult:
         max_bytes = self._settings.max_file_size_bytes
-        session = StreamSession(url, self.selection_for(choice), max_bytes)
+
+        # Оценка ожидаемого размера для прогресс-бара (из метаданных форматов).
+        expected = await self._estimate_size(url, choice)
+
+        # Если оценка превышает лимит — сообщаем сразу, не тратя трафик.
+        if expected is not None and expected > max_bytes:
+            raise TooLargeError(
+                f"Ожидаемый размер файла ~{human_size(expected)} превышает лимит "
+                f"Telegram Bot API ({human_size(max_bytes)}). Выберите качество ниже."
+            )
+
+        session = StreamSession(
+            url,
+            self._video_selector(choice),
+            self._audio_selector(choice),
+            max_bytes=max_bytes,
+            expected_total=expected,
+            on_progress=on_progress,
+        )
         try:
             if on_phase:
                 on_phase("download")
             await session.start()
 
-            def report_progress() -> None:
-                if on_progress:
-                    on_progress(min(99, session.total_bytes * 100 // max_bytes))
-
             async def body() -> AsyncIterator[bytes]:
                 async for chunk in session:
                     if cancel_event.is_set():
                         raise DownloadError("Задача отменена")
-                    report_progress()
                     yield chunk
 
             # Переключаемся на фазу отправки, как только Telegram начал приём.
@@ -187,7 +255,7 @@ class DeliveryPipeline:
             try:
                 await asyncio.wait_for(
                     upload_stream_to_telegram(
-                        base_url="https://api.telegram.org",
+                        base_url=self._settings.api_base_url,
                         token=self._settings.bot_token,
                         chat_id=chat_id,
                         kind="video",
@@ -280,7 +348,7 @@ class DeliveryPipeline:
             try:
                 await asyncio.wait_for(
                     upload_stream_to_telegram(
-                        base_url="https://api.telegram.org",
+                        base_url=self._settings.api_base_url,
                         token=self._settings.bot_token,
                         chat_id=chat_id,
                         kind=kind,
