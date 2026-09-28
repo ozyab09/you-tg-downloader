@@ -119,6 +119,41 @@ class TestKeyboardLayout:
         )
         kb = keyboards.format_keyboard(options)
         texts_flat = [btn.text for row in kb.inline_keyboard for btn in row]
-        assert "⭐ Лучшее доступное" in texts_flat
+        assert "⭐ Лучшее в лимите" in texts_flat
         assert "✖️ Закрыть" in texts_flat
         assert "MP3 128" in texts_flat and "MP3 320" in texts_flat
+
+
+class TestSizeLimitFiltering:
+    def test_formats_over_limit_not_shown(self) -> None:
+        # Длинное видео: 360p ~60 МБ, 720p ~120 МБ при лимите 50 МБ.
+        info = _info_with_heights([360, 720])
+        info["duration"] = 1200  # 20 минут
+        for f in info["formats"]:
+            if f.get("vcodec") != "none":
+                f["tbr"] = 350 if f["height"] == 360 else 750
+        options = build_format_menu(info, [(128, "MP3 128")], size_limit_bytes=50 * 1024 * 1024)
+        heights = [o.height for o in options if hasattr(o, "height")]
+        assert heights == []  # оба варианта не влезают
+
+    def test_small_format_within_limit_shown(self) -> None:
+        info = _info_with_heights([360, 720])
+        info["duration"] = 480  # 8 минут: 720p+аудио ~54 МБ > лимита, 360p ~31 МБ
+        for f in info["formats"]:
+            if f.get("vcodec") != "none":
+                f["tbr"] = 350 if f["height"] == 360 else 750
+        options = build_format_menu(info, [(128, "MP3 128")], size_limit_bytes=50 * 1024 * 1024)
+        heights = [o.height for o in options if hasattr(o, "height")]
+        assert heights == [360]  # 720p не влезает, 360p влезает
+
+    def test_audio_over_limit_filtered(self) -> None:
+        info = _info_with_heights([])
+        info["duration"] = 3600  # час: даже 128k mp3 ~59 МБ
+        options = build_format_menu(info, [(128, "MP3 128")], size_limit_bytes=50 * 1024 * 1024)
+        assert options == []
+
+    def test_no_limit_keeps_all(self) -> None:
+        info = _info_with_heights([360, 720])
+        info["duration"] = 1200
+        options = build_format_menu(info, [(128, "MP3 128")], size_limit_bytes=None)
+        assert len([o for o in options if hasattr(o, "height")]) == 2

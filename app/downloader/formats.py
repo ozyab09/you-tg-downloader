@@ -80,14 +80,18 @@ def _video_size_bytes(fmt: dict) -> int | None:
 def build_format_menu(
     info: dict,
     audio_options: list[tuple[int, str]],
+    size_limit_bytes: int | None = None,
 ) -> list[VideoOption | AudioOption]:
     """Возвращает список доступных вариантов для меню.
 
     - video: варианты, для которых существует ffmpeg-мердж с высотой <= requested
       (yt-dlp сам берёт ближайший доступный ниже, если точная высота отсутствует).
+      Варианты, не влезающие в size_limit_bytes, не предлагаются вовсе.
     - audio: перечисленные битрейты (рендерятся через ffmpeg, всегда доступны).
     """
     formats: list[dict] = info.get("formats") or []
+    duration = info.get("duration")
+    duration_ok = isinstance(duration, (int, float)) and duration > 0
 
     available_heights: set[int] = set()
     for fmt in formats:
@@ -106,28 +110,54 @@ def build_format_menu(
     options: list[VideoOption | AudioOption] = []
 
     for requested in YOUTUBE_HEIGHTS:
-        # Берём ближайшую доступную высоту >= запрошенной... нет: <= запрошенной.
+        # Берём ближайшую доступную высоту <= запрошенной.
         candidates = [h for h in available_heights if h <= requested]
         if not candidates:
             continue
         best = max(candidates)
         if any(opt.height == best for opt in options if isinstance(opt, VideoOption)):
             continue
+
+        # Оценка размера: tbr видео + 160 кбит/с AAC-аудио.
+        approx: int | None = None
+        if duration_ok:
+            vbrs = [
+                f["tbr"]
+                for f in formats
+                if (f.get("vcodec") or "none") != "none"
+                and f.get("height") == best
+                and isinstance(f.get("tbr"), (int, float))
+                and (f.get("protocol") or "").lower() not in ("m3u8", "m3u8_native")
+            ]
+            if vbrs:
+                approx = int((max(vbrs) + 160) * 1000 / 8 * duration)
+
+        # Не предлагаем то, что гарантированно не влезет в лимит (с запасом 5%).
+        if size_limit_bytes and approx and approx > size_limit_bytes * 0.95:
+            continue
+
         options.append(
             VideoOption(
                 format_id=video_selector_for_height(best),
                 height=best,
                 label=label_for_height(best),
+                approx_size_bytes=approx,
             )
         )
 
     options.sort(key=lambda opt: opt.height if isinstance(opt, VideoOption) else 0)
 
     for bitrate_kbps, label in audio_options:
+        approx_audio: int | None = None
+        if duration_ok:
+            approx_audio = int((bitrate_kbps + 48) * 1000 / 8 * duration)  # +48k контейнер/теги
+            if size_limit_bytes and approx_audio > size_limit_bytes:
+                continue
         options.append(
             AudioOption(
                 bitrate_kbps=bitrate_kbps,
                 label=label,
+                approx_size_bytes=approx_audio,
             )
         )
 

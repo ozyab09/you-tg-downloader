@@ -110,19 +110,19 @@ def format_keyboard(
             )
 
     rows: list[list[InlineKeyboardButton]] = []
-    # До 4 видео-кнопок в ряду, «Лучшее» — отдельной кнопкой.
+    # До 4 видео-кнопок в ряду; «Лучшее» = максимально влезающий вариант.
     for i in range(0, len(video_buttons), 4):
         rows.append(video_buttons[i : i + 4])
-    rows.append(
-        [
-            InlineKeyboardButton(
-                text="⭐ Лучшее доступное",
-                callback_data=cb_data_download(
-                    FormatChoice(kind="best", format_id=None, label="Best")
-                ),
-            )
-        ]
-    )
+    if video_buttons:
+        best_btn = video_buttons[-1]
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text="⭐ Лучшее в лимите",
+                    callback_data=best_btn.callback_data,
+                )
+            ]
+        )
     if audio_buttons:
         rows.append(audio_buttons)
     rows.append(

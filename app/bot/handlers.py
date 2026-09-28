@@ -120,10 +120,15 @@ def setup_router(settings: Settings, pipeline: DeliveryPipeline) -> Router:
         options = build_format_menu(
             info,
             audio_options=[(b, label) for b, _aac, label in settings.audio_options],
+            size_limit_bytes=settings.max_file_size_bytes,
         )
         if not options:
             with contextlib.suppress(TelegramAPIError):
-                await note.edit_text("⚠️ Доступные форматы не найдены.")
+                await note.edit_text(
+                    "⚠️ Для этого видео нет форматов, влезающих в лимит "
+                    f"{human_size(settings.max_file_size_bytes)}. "
+                    "Попробуйте другое видео или уменьшите длительность."
+                )
             return
 
         _last_payload[chat_id] = {
