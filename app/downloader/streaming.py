@@ -260,10 +260,11 @@ class StreamSession:
         for proc in procs:
             if proc is None:
                 continue
-            # У асинхронных стримов нет .close(); завершаем через transport.
+            # У StreamWriter есть transport, у StreamReader — нет; закрываем аккуратно.
             for stream in (proc.stdin, proc.stdout, proc.stderr):
-                if stream is not None and stream.transport is not None:
-                    stream.transport.close()
+                transport = getattr(stream, "transport", None)
+                if transport is not None:
+                    transport.close()
 
 
 __all__ = ["StreamSession"]
