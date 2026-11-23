@@ -1,4 +1,4 @@
-aiogram==3.31.0
+aiogram==3.33.0
 # yt-dlp должен быть свежим: YouTube часто ломает старые версии
 # (см. https://github.com/yt-dlp/yt-dlp/issues/17389). Не пинуем верхнюю границу.
 yt-dlp>=2026.8.19
